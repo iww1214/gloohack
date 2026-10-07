@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Safety1271 — Command Center</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f0f13;--surface:#1a1a22;--card:#23232e;--border:#2e2e3e;
+  --text:#e0dfd8;--muted:#888880;--accent:#ffffff;
+  --green:#1d9e75;--amber:#ef9f27;--red:#e24b4a;--blue:#378add;
+}
+body{background:var(--bg);color:var(--text);font-family:'SF Mono',Consolas,monospace;font-size:13px;min-height:100vh;padding:0}
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-size:15px;font-weight:600;letter-spacing:.04em}
+.logo span{color:var(--accent)}
+.status-dot{width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;margin-right:6px;box-shadow:0 0 6px var(--green)}
+.status-dot.warn{background:var(--amber);box-shadow:0 0 6px var(--amber)}
+.status-dot.danger{background:var(--red);box-shadow:0 0 6px var(--red)}
+.status-dot.blink{animation:blink 1s ease-in-out infinite}
+@keyframes blink{50%{opacity:.2}}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;padding:20px 24px}
+.operations{display:grid;grid-template-columns:minmax(0,2fr) minmax(230px,1fr);gap:12px;padding:20px 24px 0}
+.video-frame{aspect-ratio:16/9;background:#080a0b;display:grid;place-items:center;overflow:hidden;position:relative}
+.video-frame img{width:100%;height:100%;object-fit:contain;display:none}
+.video-placeholder{color:var(--muted);text-align:center;padding:20px}
+.source-badge{float:right;color:var(--amber);border:1px solid currentColor;border-radius:3px;padding:2px 6px;font-size:10px}
+.telemetry-row{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.telemetry-row span:last-child{text-align:right;font-weight:600}
+.operations .panel{min-width:0}
+@media(max-width:750px){.operations,.row{grid-template-columns:1fr}.operations{padding:12px 12px 0}.grid{padding:12px;gap:8px}.row{padding:0 12px 12px}header{padding:12px;gap:8px;flex-wrap:wrap}.card-value{font-size:22px}}
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.card-label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px}
+.card-value{font-size:26px;font-weight:600;color:var(--text)}
+.card-value.green{color:var(--green)}
+.card-value.amber{color:var(--amber)}
+.card-value.red{color:var(--red)}
+.card-sub{font-size:11px;color:var(--muted);margin-top:4px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 24px 12px}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.panel-title{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:10px}
+.log-line{padding:3px 0;border-bottom:1px solid var(--border);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.log-line.warn{color:var(--amber)}
+.log-line.crit{color:var(--red)}
+.log-line.ok{color:var(--green)}
+.alert-item{padding:8px 10px;border-radius:6px;margin-bottom:6px;border-left:3px solid var(--border)}
+.alert-item.safety{border-color:var(--amber);background:rgba(239,159,39,.08)}
+.alert-item.security{border-color:var(--blue);background:rgba(55,138,221,.08)}
+.alert-item.emergency{border-color:var(--red);background:rgba(226,75,74,.12)}
+.alert-item.match{border-color:#ffffff;background:rgba(255,255,255,.1)}
+.watch-item{padding:8px 10px;border-radius:6px;margin-bottom:6px;border-left:3px solid var(--border);font-size:12px}
+.watch-item.critical{border-color:var(--red);background:rgba(226,75,74,.12)}
+.watch-item.high{border-color:var(--red);background:rgba(226,75,74,.1)}
+.watch-item.medium{border-color:var(--amber);background:rgba(239,159,39,.08)}
+.watch-item.match{border-color:#ffffff;background:rgba(255,255,255,.08)}
+.alert-tool{font-size:10px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px}
+.alert-desc{color:var(--text);font-size:12px}
+.alert-time{font-size:10px;color:var(--muted);margin-top:3px}
+.atc-line{padding:6px 10px;border-radius:6px;margin-bottom:4px;border-left:3px solid var(--border);font-size:12px;color:var(--muted)}
+.atc-line.flag-critical{border-color:var(--red);background:rgba(226,75,74,.16);color:var(--text)}
+.atc-line.flag-high{border-color:var(--red);background:rgba(226,75,74,.1);color:var(--text)}
+.atc-line.flag-medium{border-color:var(--amber);background:rgba(239,159,39,.1);color:var(--text)}
+.atc-line.flag-info{border-color:var(--blue);background:rgba(55,138,221,.08);color:var(--text)}
+.atc-meta{font-size:10px;letter-spacing:.04em;margin-bottom:2px;color:var(--muted)}
+.atc-meta b{text-transform:uppercase}
+.atc-action{margin-top:3px;font-size:11px;color:var(--amber)}
+.cmd-form{display:flex;gap:8px;flex-wrap:wrap}
+.cmd-form input{flex:1;min-width:240px;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:9px 12px;font:inherit;font-size:13px}
+.cmd-form input:focus{outline:1px solid var(--blue)}
+.cmd-btn{background:rgba(55,138,221,.18);color:var(--text);border:1px solid rgba(55,138,221,.5);border-radius:6px;padding:8px 14px;font:inherit;font-size:12px;cursor:pointer}
+.cmd-btn:hover{background:rgba(55,138,221,.32)}
+.cmd-btn.secondary{background:transparent;border-color:var(--border);color:var(--muted)}
+.cmd-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.cmd-chip{background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:20px;padding:3px 10px;font:inherit;font-size:11px;cursor:pointer}
+.cmd-chip:hover{color:var(--text);border-color:var(--blue)}
+.cmd-active{margin-top:10px;padding:8px 10px;border-radius:6px;border-left:3px solid var(--green);background:rgba(29,158,117,.1);font-size:12px}
+.cmd-active.none{border-color:var(--border);background:transparent;color:var(--muted)}
+.cmd-hist{margin-top:8px;font-size:11px;color:var(--muted)}
+.demo-row{margin-top:12px;padding-top:10px;border-top:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:11px;color:var(--muted)}
+.demo-row .cmd-btn{padding:5px 10px;font-size:11px}
+.demo-row .cmd-btn.on{border-color:var(--amber);color:var(--amber)}
+.cmd-btn.on{border-color:var(--amber);color:var(--amber)}
+.zone-bar{display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--border)}
+.zone-name{width:180px;color:var(--muted);font-size:11px}
+.zone-status{font-size:11px}
+.battery-bar{height:6px;border-radius:3px;background:var(--border);margin-top:6px;overflow:hidden}
+.battery-fill{height:100%;border-radius:3px;background:var(--green);transition:width .5s}
+.pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;letter-spacing:.04em}
+.pill.go{background:rgba(29,158,117,.2);color:var(--green);border:1px solid rgba(29,158,117,.3)}
+.pill.hold{background:rgba(239,159,39,.2);color:var(--amber);border:1px solid rgba(239,159,39,.3)}
+.pill.rth{background:rgba(226,75,74,.2);color:var(--red);border:1px solid rgba(226,75,74,.3)}
+.pill.nogo{background:rgba(226,75,74,.2);color:var(--red);border:1px solid rgba(226,75,74,.3)}
+.pill.conditional{background:rgba(239,159,39,.2);color:var(--amber);border:1px solid rgba(239,159,39,.3)}
+.pf-section-title{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:12px 0 6px}
+footer{padding:12px 24px;color:var(--muted);font-size:10px;border-top:1px solid var(--border);display:flex;justify-content:space-between}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🚁 <span>Safety1271</span> — Command Center</div>
+  <div role="status" aria-live="polite"><span class="status-dot warn" id="conn-dot"></span><span id="conn-label">connecting...</span></div>
+  <div id="site-name" style="color:var(--muted)">—</div>
+</header>
+
+<!-- Preflight & Airspace -->
+<div class="row" style="padding:20px 24px 0">
+  <div class="panel" style="grid-column:1 / -1">
+    <div class="panel-title">Airspace &amp; preflight <span id="pf-verdict" class="pill" style="float:right">NO DATA</span> <span id="cond-status" class="pill" style="float:right;margin-right:6px">NO DATA</span></div>
+    <form id="loc-form" class="cmd-form" autocomplete="off" style="margin-bottom:10px;align-items:center">
+      <span style="font-size:11px;color:var(--muted)">Operating location:</span>
+      <span id="loc-label" style="font-size:12px">—</span>
+      <input id="loc-input" type="text" maxlength="40" aria-label="Set location by airport code or latitude, longitude" placeholder="Airport code (KDEN) or lat, lon" style="max-width:260px;min-width:160px;flex:0 1 260px">
+      <button class="cmd-btn" type="submit" id="loc-set-btn">Set manually</button>
+      <button class="cmd-btn on" type="button" id="loc-auto">Auto (aircraft GPS)</button>
+    </form>
+    <div id="airspace-box" style="display:none;margin-bottom:10px;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px">
+      <div style="display:flex;gap:18px;flex-wrap:wrap;align-items:baseline">
+        <span id="airspace-class" style="font-size:16px;font-weight:700">—</span>
+        <span id="airspace-auth" style="color:var(--amber)"></span>
+      </div>
+      <div id="airspace-detail" style="color:var(--muted);margin-top:4px"></div>
+      <div style="color:var(--muted);font-size:10px;margin-top:6px">Derived from GPS and published tower hours — advisory only; confirm on a sectional chart or LAANC app before flight.</div>
+    </div>
+    <div id="cond-empty" style="color:var(--muted);font-size:12px">Fetching conditions…</div>
+    <div id="cond-body" style="display:none">
+      <div style="display:flex;gap:28px;flex-wrap:wrap;align-items:flex-start">
+        <div id="cond-metrics" style="display:grid;grid-template-columns:repeat(4,minmax(110px,1fr));gap:10px 22px;flex:1;min-width:360px"></div>
+        <div style="min-width:280px">
+          <div class="pf-section-title" style="margin-top:0">Wind, last 6 h <span id="cond-trend" style="color:var(--muted)"></span></div>
+          <div id="cond-spark"></div>
+        </div>
+      </div>
+      <div id="cond-reasons" style="margin-top:10px;font-size:12px"></div>
+      <div id="cond-freqs" style="margin-top:8px;font-size:11px"></div>
+      <div class="pf-section-title">Forecast wind, next hours</div>
+      <div id="cond-forecast" style="display:flex;gap:8px;flex-wrap:wrap;font-size:11px"></div>
+      <div id="cond-alerts" style="margin-top:8px;font-size:12px"></div>
+      <div id="cond-foot" style="margin-top:8px;font-size:10px;color:var(--muted)"></div>
+    </div>
+    <div id="pf-empty" style="color:var(--muted);font-size:12px;margin-top:12px;border-top:1px solid var(--border);padding-top:12px">No preflight check reported yet this session.</div>
+    <div id="pf-body" style="display:none;margin-top:12px;border-top:1px solid var(--border);padding-top:12px">
+      <div style="display:flex;gap:24px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-bottom:8px">
+        <span>Report: <span id="pf-time" style="color:var(--text)">—</span></span>
+      </div>
+      <div id="pf-window-wrap" style="display:none;margin-top:10px;font-size:12px">
+        Next GO window: <span id="pf-window" style="color:var(--green)"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Operator command bar -->
+<div class="row" style="grid-template-columns:1fr;padding-top:12px">
+  <div class="panel">
+    <div class="panel-title">Safety &amp; security scenarios — live narrative generation by the agent</div>
+    <form class="cmd-form" id="cmd-form" autocomplete="off">
+      <input id="cmd-input" type="text" maxlength="300" aria-label="Operator goal" placeholder="e.g. find the person in a red top">
+      <button class="cmd-btn" type="submit">Send</button>
+      <button class="cmd-btn secondary" type="button" id="cmd-clear">Clear</button>
+    </form>
+    <div class="cmd-active none" id="cmd-active" style="display:none"></div>
+    <div class="cmd-hist" id="cmd-hist"></div>
+    <div class="demo-row" id="demo-row"></div>
+    <div style="margin-top:6px;font-size:10px;color:var(--muted)">Choosing a scenario sets what the vision agent looks for. It cannot launch, move or land the aircraft.</div>
+  </div>
+</div>
+
+<div class="operations">
+  <div class="panel">
+    <div class="panel-title">Camera feed <span class="source-badge" id="video-source">SOURCE UNKNOWN</span></div>
+    <div class="video-frame">
+      <img id="live-video" alt="Live drone camera feed">
+      <div id="video-placeholder" class="video-placeholder">Video unavailable</div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-title">What the drone sees</div>
+    <div id="narration" style="font-size:13px;line-height:1.5;max-height:240px;overflow-y:auto">No observations yet.</div>
+    <div class="panel-title" style="margin-top:18px">Aircraft telemetry</div>
+    <div class="telemetry-row"><span>Aircraft connectivity</span><span><span id="aircraft-dot" class="status-dot danger"></span><span id="aircraft-status">Disconnected</span></span></div>
+    <div class="telemetry-row"><span>Telemetry</span><span id="telemetry-status">Unknown</span></div>
+    <div class="telemetry-row"><span>Altitude</span><span id="altitude">—</span></div>
+    <div class="telemetry-row"><span>Compass</span><span id="heading">—</span></div>
+    <div class="telemetry-row"><span>Last update</span><span id="telemetry-time">—</span></div>
+  </div>
+</div>
+
+<!-- KPI cards -->
+<div class="grid">
+  <div class="card">
+    <div class="card-label">Drone state</div>
+    <div class="card-value green" id="kpi-drone">—</div>
+    <div class="card-sub">
+      Battery: <span id="kpi-battery">—</span>
+      <div class="battery-bar"><div class="battery-fill" id="battery-fill" style="width:0%"></div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-label">Frames analysed</div>
+    <div class="card-value" id="kpi-frames">0</div>
+    <div class="card-sub">since session start</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Safety flags</div>
+    <div class="card-value amber" id="kpi-safety">0</div>
+    <div class="card-sub">hazards detected</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Security flags</div>
+    <div class="card-value blue" id="kpi-security" style="color:var(--blue)">0</div>
+    <div class="card-sub">concerns raised</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Alerts sent</div>
+    <div class="card-value" id="kpi-alerts">0</div>
+    <div class="card-sub">SMS + email</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Emergencies</div>
+    <div class="card-value red" id="kpi-emerg">0</div>
+    <div class="card-sub">911-level events</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Drone location</div>
+    <div class="card-value" id="kpi-loc-gps" style="font-size:16px">no position yet</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Free parking spaces</div>
+    <div class="card-value" id="kpi-parking">—</div>
+    <div class="card-sub" id="kpi-parking-sub">no count yet</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Uptime</div>
+    <div class="card-value" id="kpi-uptime">0m</div>
+    <div class="card-sub">session duration</div>
+  </div>
+</div>
+
+<div class="row">
+  <!-- Live log -->
+  <div class="panel">
+    <div class="panel-title">Live patrol log</div>
+    <div id="log-container" style="max-height:260px;overflow:hidden"></div>
+  </div>
+
+  <!-- Recent alerts -->
+  <div class="panel">
+    <div class="panel-title">Recent alerts</div>
+    <div id="alerts-container" style="max-height:260px;overflow-y:auto">
+      <div style="color:var(--muted);font-size:12px">No alerts yet this session.</div>
+    </div>
+  </div>
+</div>
+
+<div class="row" style="grid-template-columns:minmax(240px,280px) 1fr;gap:12px">
+  <!-- ATC radio feed -->
+  <div class="panel">
+    <div class="panel-title" style="text-align:center">ATC Live Audio <span id="atc-audio-dot" class="status-dot" style="display:none;animation:blink 1s ease-in-out infinite"></span></div>
+    <button type="button" class="cmd-btn" id="atc-audio" style="padding:10px 18px;font-size:14px;font-weight:600;width:100%">▶ Play</button>
+    <div id="atc-audio-feed" style="margin-top:10px;font-size:11px;color:var(--muted);text-align:center">—</div>
+    <audio id="atc-player" preload="none" style="display:none"></audio>
+  </div>
+  <div class="panel">
+    <div class="panel-title">ATC radio transcript <span id="atc-source" style="color:var(--muted);margin-left:8px"></span><span id="atc-count" style="float:right"></span></div>
+    <div style="display:flex;gap:0">
+      <div id="atc-container" style="max-height:300px;overflow-y:hidden;flex:1;padding-right:12px">
+        <div style="color:var(--muted);font-size:12px">No ATC traffic received yet. Start <code>atc_listener_agent.py</code> to populate this feed.</div>
+      </div>
+      <div style="width:1px;background:var(--border);flex-shrink:0"></div>
+      <div style="flex:1;padding-left:12px;min-width:0">
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Flagged &amp; pinned</div>
+        <div id="atc-flagged" style="max-height:300px;overflow-y:auto"><div style="color:var(--muted);font-size:12px">Nothing flagged or pinned yet.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row" style="padding-bottom:20px">
+  <!-- Zone status -->
+  <div class="panel">
+    <div class="panel-title">Compound zones</div>
+    <div id="zones-container">
+      <div class="zone-bar"><div class="zone-name">Main entrance</div><div class="zone-status" id="z0">waiting...</div></div>
+      <div class="zone-bar"><div class="zone-name">Parking lot</div><div class="zone-status" id="z1">waiting...</div></div>
+      <div class="zone-bar"><div class="zone-name">Children's playground</div><div class="zone-status" id="z2">waiting...</div></div>
+      <div class="zone-bar"><div class="zone-name">Rear / loading dock</div><div class="zone-status" id="z3">waiting...</div></div>
+      <div class="zone-bar"><div class="zone-name">Chapel / sanctuary</div><div class="zone-status" id="z4">waiting...</div></div>
+      <div class="zone-bar"><div class="zone-name">Classrooms (north)</div><div class="zone-status" id="z5">waiting...</div></div>
+      <div class="zone-bar"><div class="zone-name">Car park perimeter</div><div class="zone-status" id="z6">waiting...</div></div>
+      <div class="zone-bar"><div class="zone-name">Generator / HVAC</div><div class="zone-status" id="z7">waiting...</div></div>
+    </div>
+  </div>
+
+  <!-- System info -->
+  <div class="panel">
+    <div class="panel-title">System</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)">
+        <span style="color:var(--muted)">Drone model</span>
+        <span>DJI Mini 4 Pro</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)">
+        <span style="color:var(--muted)">MSDK bridge</span>
+        <span id="sys-bridge">Unknown</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)">
+        <span style="color:var(--muted)">Dynamic routing</span>
+        <span id="sys-dynamic">Not reported</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)">
+        <span style="color:var(--muted)">ATC listener</span>
+        <span id="sys-atc">Not reported</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)">
+        <span style="color:var(--muted)">Scheduler</span>
+        <span id="sys-sched">Not reported</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)">
+        <span style="color:var(--muted)">Last incident file</span>
+        <span id="sys-incident" style="color:var(--muted);font-size:11px">none</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:4px 0">
+        <span style="color:var(--muted)">Dashboard refresh</span>
+        <span id="sys-refresh">—</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <span>Safety1271 © 2026 — Gloo AI Hackathon</span>
+  <span id="footer-time">—</span>
+</footer>
+
+<script>
+const API = '';
+const video = document.getElementById('live-video');
+const videoPlaceholder = document.getElementById('video-placeholder');
+video.onload = () => { video.style.display = 'block'; videoPlaceholder.style.display = 'none'; };
+video.onerror = () => { video.style.display = 'none'; videoPlaceholder.style.display = 'block'; };
+video.src = API + '/api/video';
+
+function fmt(n) { return n >= 1000 ? (n/1000).toFixed(1)+'k' : n; }
+function uptime(s) {
+  if (s < 60) return s+'s';
+  if (s < 3600) return Math.floor(s/60)+'m '+Math.floor(s%60)+'s';
+  return Math.floor(s/3600)+'h '+Math.floor((s%3600)/60)+'m';
+}
+
+function droneClass(state) {
+  if (!state) return '';
+  if (state === 'holding') return 'hold';
+  if (state === 'returning') return 'rth';
+  return 'go';
+}
+
+const fmtTime = v => new Date(v).toLocaleTimeString('en-GB', {hour12: false});
+const fmtDateTime = v => new Date(v).toLocaleString('en-GB', {hour12: false});
+const fmtHM = v => new Date(v).toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit', hour12: false});
+function ageText(v) {
+  const m = Math.max(0, Math.round((Date.now() - new Date(v).getTime()) / 60000));
+  return m < 60 ? m + ' min' : Math.floor(m / 60) + ' h ' + (m % 60) + ' min';
+}
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+}
+
+function verdictPillClass(verdict) {
+  const v = (verdict || '').toUpperCase();
+  if (v === 'GO') return 'pill go';
+  if (v === 'NO-GO') return 'pill nogo';
+  if (v === 'CONDITIONAL') return 'pill conditional';
+  return 'pill';
+}
+
+function renderPreflight(pf) {
+  const empty = document.getElementById('pf-empty');
+  const body = document.getElementById('pf-body');
+  const pill = document.getElementById('pf-verdict');
+  if (!pf) {
+    empty.style.display = 'block';
+    body.style.display = 'none';
+    pill.textContent = 'NO DATA';
+    pill.className = 'pill';
+    return;
+  }
+  empty.style.display = 'none';
+  body.style.display = 'block';
+  pill.textContent = pf.verdict || 'UNKNOWN';
+  pill.className = verdictPillClass(pf.verdict);
+  document.getElementById('pf-time').textContent = pf.received_at ? fmtDateTime(pf.received_at) + ' (' + ageText(pf.received_at) + ' ago)' : '—';
+
+  // Next GO window
+  const winWrap = document.getElementById('pf-window-wrap');
+  if (pf.next_go_window) {
+    winWrap.style.display = 'block';
+    document.getElementById('pf-window').textContent = pf.next_go_window;
+  } else {
+    winWrap.style.display = 'none';
+  }
+}
+
+function compassName(deg) {
+  const names = ['North', 'North-east', 'East', 'South-east', 'South', 'South-west', 'West', 'North-west'];
+  return names[Math.floor((((deg % 360) + 360) % 360 + 22.5) / 45) % 8];
+}
+
+function setAircraftState(connected, bridgeUp) {
+  const dot = document.getElementById('aircraft-dot');
+  const label = document.getElementById('aircraft-status');
+  if (connected) { dot.className = 'status-dot blink'; label.textContent = 'Connected'; }
+  else if (bridgeUp) { dot.className = 'status-dot warn'; label.textContent = 'Standby'; }
+  else { dot.className = 'status-dot danger'; label.textContent = 'Disconnected'; }
+}
+
+function clearTelemetry() {
+  for (const id of ['altitude', 'heading', 'telemetry-time']) document.getElementById(id).textContent = '—';
+  document.getElementById('kpi-battery').textContent = '—';
+  document.getElementById('battery-fill').style.width = '0%';
+  document.getElementById('kpi-drone').textContent = 'UNKNOWN';
+}
+
+function renderNarration(alerts) {
+  const box = document.getElementById('narration');
+  const lines = (((window._narration || {}).history) || []).map(h => h.text).reverse();
+  if (!lines.length) {
+    const a = (alerts || [])[0];
+    if (a) lines.push(a.description || a.what || a.observation || '');
+  }
+  const key = lines.join('\n');
+  if (box.dataset.key === key) return;
+  box.dataset.key = key;
+  box.replaceChildren(...(lines.length ? lines : ['No observations yet.']).map(text => {
+    const p = document.createElement('div');
+    p.textContent = text;
+    p.style.marginBottom = '6px';
+    return p;
+  }));
+  box.scrollTop = box.scrollHeight;
+}
+
+async function fetchStatus() {
+  try {
+    const r = await fetch(API+'/api/status');
+    if (!r.ok) throw new Error(r.status);
+    const d = await r.json();
+
+    document.getElementById('site-name').textContent = d.compound_name || '';
+    const videoSource = d.video_source_mode === 'simulated' ? 'PRE-RECORDED FOOTAGE' : 'LIVE VIDEO SOURCE';
+    document.getElementById('video-source').textContent = videoSource;
+    clearTelemetry();
+    document.getElementById('sys-bridge').textContent = d.bridge_connected ? 'Reachable' : 'Offline';
+    setAircraftState(d.aircraft_connected, d.bridge_connected);
+    document.getElementById('telemetry-status').textContent = d.telemetry_fresh ? 'Current' : 'Last known (link idle)';
+    if (d.battery_pct != null || d.altitude_m != null || d.heading_deg != null) {
+      document.getElementById('kpi-drone').textContent = (d.drone_state || 'connected').toUpperCase();
+      document.getElementById('kpi-drone').className = 'card-value ' + (d.telemetry_fresh ? 'green' : 'amber');
+      document.getElementById('kpi-battery').textContent = d.battery_pct == null ? '—' : d.battery_pct + '%';
+      document.getElementById('battery-fill').style.width = d.battery_pct == null ? '0%' : Math.max(0, Math.min(100, d.battery_pct)) + '%';
+      document.getElementById('battery-fill').style.background = d.battery_pct > 50 ? 'var(--green)' : d.battery_pct > 20 ? 'var(--amber)' : 'var(--red)';
+      document.getElementById('altitude').textContent = d.altitude_m == null ? '—' : Math.round(d.altitude_m * 3.28084) + ' ft';
+      document.getElementById('heading').textContent = d.heading_deg == null ? '—' : compassName(d.heading_deg) + ' ' + Math.round(d.heading_deg) + '°' + (d.heading_simulated ? ' (pre-recorded)' : '');
+      document.getElementById('telemetry-time').textContent = fmtTime(d.demo_mode ? Date.now() : d.telemetry_updated_at_ms) + (d.telemetry_fresh ? '' : ' (held)');
+    }
+    renderNarration(d.recent_alerts);
+    document.getElementById('kpi-frames').textContent  = fmt(d.frames_analyzed||0);
+    document.getElementById('kpi-safety').textContent  = d.safety_flags||0;
+    document.getElementById('kpi-security').textContent= d.security_flags||0;
+    document.getElementById('kpi-alerts').textContent  = d.alerts_sent||0;
+    document.getElementById('kpi-emerg').textContent   = d.emergencies||0;
+    document.getElementById('kpi-loc-gps').textContent = (d.latitude_deg != null && d.longitude_deg != null)
+      ? Number(d.latitude_deg).toFixed(5) + ', ' + Number(d.longitude_deg).toFixed(5)
+      : 'no position yet';
+    document.getElementById('kpi-uptime').textContent  = uptime(d.uptime_s||0);
+    document.getElementById('sys-incident').textContent= d.last_incident || 'none';
+    document.getElementById('sys-refresh').textContent = fmtTime(Date.now());
+    document.getElementById('footer-time').textContent = fmtDateTime(Date.now());
+
+    renderPreflight(d.preflight || null);
+
+    document.getElementById('conn-dot').className = d.telemetry_fresh ? 'status-dot' : 'status-dot warn';
+    document.getElementById('conn-dot').title = d.demo_mode ? 'Demo replay'
+      : d.telemetry_fresh ? 'Green: aircraft connected, live telemetry' : 'Orange: dashboard is running, but no live telemetry from the aircraft (drone off, not connected, or phone app not reporting)';
+    document.getElementById('conn-label').textContent = d.demo_mode ? '' : (d.telemetry_fresh ? 'aircraft live' : '');
+    window._demoMode = !!d.demo_mode;
+
+    // Alerts
+    if (d.recent_alerts && d.recent_alerts.length) {
+      const c = document.getElementById('alerts-container');
+      c.innerHTML = d.recent_alerts.slice(0,8).map(a => {
+        const cls = a.tool === 'directive_match' ? 'match' :
+                    a.tool === 'emergency' ? 'emergency' :
+                    a.tool && a.tool.includes('safety') ? 'safety' : 'security';
+        return `<div class="alert-item ${cls}">
+          <div class="alert-tool">${escapeHtml((a.tool||'alert').toUpperCase())}</div>
+          <div class="alert-desc">${escapeHtml(a.zone||'')} — ${escapeHtml((a.description||a.summary||'').slice(0,80))}</div>
+          <div class="alert-time">${a.timestamp ? escapeHtml(fmtTime(a.timestamp)) : ''}</div>
+        </div>`;
+      }).join('');
+    }
+
+  } catch(e) {
+    document.getElementById('conn-dot').className    = 'status-dot danger';
+    document.getElementById('conn-dot').title = 'Red: the page cannot reach the dashboard server';
+    document.getElementById('conn-label').textContent = 'dashboard disconnected';
+    clearTelemetry();
+    setAircraftState(false, false);
+    document.getElementById('telemetry-status').textContent = 'Unknown';
+  }
+}
+
+async function fetchLog() {
+  try {
+    const r = await fetch(API+'/api/log?lines=20');
+    if (!r.ok) return;
+    const d = await r.json();
+    const c = document.getElementById('log-container');
+    c.innerHTML = (d.lines||[]).reverse().map(line => {
+      const cls = line.includes('CRITICAL') || line.includes('🆘') ? 'crit' :
+                  line.includes('WARNING')  || line.includes('🚨') ? 'warn' :
+                  line.includes('✅') ? 'ok' : '';
+      return `<div class="log-line ${cls}">${escapeHtml(line)}</div>`;
+    }).join('');
+    updateZones(d.lines||[]);
+  } catch(e) {}
+}
+
+// Update zone statuses based on log keywords
+function updateZones(logLines) {
+  const zones = [
+    'Main entrance','Parking lot',"Children's playground",
+    'Rear / loading dock','Chapel / sanctuary','Classrooms (north)',
+    'Car park perimeter','Generator / HVAC'
+  ];
+  zones.forEach((zone, i) => {
+    const el = document.getElementById('z'+i);
+    if (!el) return;
+    const recent = (logLines||[]).filter(l => l.includes(zone));
+    if (!recent.length) { el.textContent = '—'; return; }
+    const last = recent[recent.length-1];
+    if (last.includes('CRITICAL') || last.includes('🆘') || last.includes('emergency')) {
+      el.innerHTML = '<span style="color:var(--red)">🆘 EMERGENCY</span>';
+    } else if (last.includes('🚨') || last.includes('IMMEDIATE') || last.includes('immediate_alert')) {
+      el.innerHTML = '<span style="color:var(--red)">🚨 ALERT</span>';
+    } else if (last.includes('⚠️') || last.includes('safety') || last.includes('security')) {
+      el.innerHTML = '<span style="color:var(--amber)">⚠️ FLAG</span>';
+    } else if (last.includes('📋') || last.includes('log_observation')) {
+      el.innerHTML = '<span style="color:var(--blue)">📋 noted</span>';
+    } else if (last.includes('✅')) {
+      el.innerHTML = '<span style="color:var(--green)">✅ clear</span>';
+    }
+  });
+}
+
+async function fetchAtc() {
+  try {
+    const r = await fetch(API+'/api/atc?limit=40');
+    if (!r.ok) return;
+    const d = await r.json();
+    const entries = d.entries || [];
+    window._lastAtc = entries;
+    const c = document.getElementById('atc-container');
+    const flagged = entries.filter(e => e.flagged).length;
+    document.getElementById('atc-count').textContent = entries.length ? flagged + ' flagged / ' + entries.length : '';
+    if (!entries.length) return;
+    c.innerHTML = entries.map(e => {
+      const sev = (e.severity || '').toLowerCase();
+      const cls = e.flagged ? ' flag-' + (['critical','high','medium'].includes(sev) ? sev : 'info') : '';
+      const when = e.received_at ? fmtTime(e.received_at) : '';
+      const label = e.flagged ? '<b style="color:var(--amber)">' + escapeHtml(e.severity || 'FLAG') + ' ' + escapeHtml(e.category || '') + '</b> &middot; ' : '';
+      const summary = e.flagged && e.summary ? '<div>' + escapeHtml(e.summary) + '</div>' : '';
+      const action = e.flagged && e.recommendation ? '<div class="atc-action">&rarr; ' + escapeHtml(e.recommendation) + '</div>' : '';
+      const pin = '<button type="button" class="cmd-chip" data-pin="' + escapeHtml(e.received_at || '') + '" style="margin-left:8px;padding:1px 8px;font-size:10px">' + (e.pinned ? 'Pinned' : 'Pin') + '</button>';
+      return '<div class="atc-line' + cls + '"><div class="atc-meta">' + label + escapeHtml(when) + ' &middot; ' + escapeHtml(e.frequency || '') + pin + '</div>'
+        + '<div>' + escapeHtml(e.transcript || '') + '</div>' + summary + action + '</div>';
+    }).join('');
+    const f = document.getElementById('atc-flagged');
+    const keep = entries.filter(e => e.flagged || e.pinned);
+    f.innerHTML = keep.length ? keep.map(e => {
+      const sev = (e.severity || '').toLowerCase();
+      const cls = e.flagged ? ' flag-' + (['critical','high','medium'].includes(sev) ? sev : 'info') : ' flag-high';
+      const when = e.received_at ? fmtTime(e.received_at) : '';
+      const label = e.flagged ? '<b style="color:var(--amber)">' + escapeHtml(e.severity || 'FLAG') + ' ' + escapeHtml(e.category || '') + '</b> &middot; ' : '<b style="color:var(--blue)">Pinned</b> &middot; ';
+      const summary = e.summary ? '<div>' + escapeHtml(e.summary) + '</div>' : '';
+      const action = e.recommendation ? '<div class="atc-action">&rarr; ' + escapeHtml(e.recommendation) + '</div>' : '';
+      const pin = '<button type="button" class="cmd-chip" data-pin="' + escapeHtml(e.received_at || '') + '" style="margin-left:8px;padding:1px 8px;font-size:10px">' + (e.pinned ? 'Pinned' : 'Pin') + '</button>';
+      return '<div class="atc-line' + cls + '"><div class="atc-meta">' + label + escapeHtml(when) + ' &middot; ' + escapeHtml(e.frequency || '') + pin + '</div>'
+        + '<div>' + escapeHtml(e.transcript || '') + '</div>' + summary + action + '</div>';
+    }).join('') : '<div style="color:var(--muted);font-size:12px">Nothing flagged or pinned yet.</div>';
+  } catch(e) {}
+}
+
+// Operator goal: sets a search directive for the vision agent (never flight control)
+document.getElementById('cmd-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const input = document.getElementById('cmd-input');
+  const text = input.value.trim();
+  if (!text) return;
+  try {
+    const r = await fetch(API+'/api/command', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({text})});
+    if (r.ok) { input.value = ''; fetchCommand(); }
+  } catch(err) {}
+});
+document.getElementById('cmd-clear').addEventListener('click', async () => {
+  try { await fetch(API+'/api/command', {method:'DELETE'}); fetchCommand(); } catch(err) {}
+});
+async function fetchCommand() {
+  try {
+    const r = await fetch(API+'/api/command');
+    if (!r.ok) return;
+    const d = await r.json();
+    const box = document.getElementById('cmd-active');
+    if (!box) return;
+    if (d.active) {
+      box.style.display = '';
+      box.className = 'cmd-active';
+      box.innerHTML = '<b>ACTIVE:</b> ' + escapeHtml(d.active.text) + ' <span style="color:var(--muted)">(since ' + escapeHtml(fmtTime(d.active.created_at)) + ')</span>' +
+        (d.active.target_zone ? '<div style="margin-top:4px;color:var(--amber)">Tasking: ' + escapeHtml(d.active.target_zone) +
+          (window._demoMode ? ' — aircraft moving (pre-recorded)' : ' — pilot advisory: fly the aircraft to this area') + '</div>' : '');
+    } else {
+      box.style.display = 'none';
+      box.className = 'cmd-active none';
+      box.textContent = '';
+    }
+  } catch(e) {}
+}
+
+// Demo replay: plays pre-recorded footage through the same feed and agent
+async function fetchDemo() {
+  try {
+    const r = await fetch(API+'/api/demo');
+    if (!r.ok) return;
+    const d = await r.json();
+    const row = document.getElementById('demo-row');
+    row.innerHTML = '<span>Video source:</span>' +
+      '<button type="button" class="cmd-btn' + (d.active ? '' : ' on') + '" data-demo="__live" title="Show the aircraft\'s real camera feed and narrate what it sees">Live drone view</button>' +
+      d.scenarios.map(s => '<button type="button" class="cmd-btn' + (d.active === s.id ? ' on' : '') + '" data-demo="' + escapeHtml(s.id) + '"' +
+        (s.available ? '' : ' disabled') + ' title="' + escapeHtml(s.summary) + '">' + escapeHtml(s.title) + '</button>').join('');
+  } catch(e) {}
+}
+document.getElementById('demo-row').addEventListener('click', async e => {
+  const id = e.target.dataset && e.target.dataset.demo;
+  if (!id) return;
+  try {
+    if (id === '__live') {
+      await fetch(API+'/api/demo/stop', {method:'POST'});
+      fetch(API+'/api/narrate_live', {method:'POST'}).catch(() => {}); // fire-and-forget: feed shows now, narration lands when ready
+    } else {
+      await fetch(API+'/api/demo/start', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({id})});
+    }
+    location.reload();
+  } catch(err) {}
+});
+
+// Live conditions: wind, visibility, alerts from nearby airports, refreshed server-side
+const WIND_LIMIT_MPH = 23.6;
+function windSparkline(history) {
+  const pts = history.filter(h => h.wind_mph != null).map(h => ({t: new Date(h.t).getTime(), v: Math.max(h.wind_mph, h.gust_mph || 0)}));
+  if (pts.length < 2) return '<span style="color:var(--muted);font-size:11px">Not enough observations</span>';
+  const W = 280, H = 56, max = Math.max(30, ...pts.map(p => p.v)), t0 = pts[0].t, span = (pts[pts.length-1].t - t0) || 1;
+  const x = p => ((p.t - t0) / span * (W - 4) + 2).toFixed(1), y = v => (H - 4 - v / max * (H - 8)).toFixed(1);
+  const line = pts.map(p => x(p) + ',' + y(p.v)).join(' ');
+  return '<svg width="' + W + '" height="' + H + '" role="img" aria-label="Wind speed over the last six hours">' +
+    '<line x1="0" x2="' + W + '" y1="' + y(WIND_LIMIT_MPH) + '" y2="' + y(WIND_LIMIT_MPH) + '" stroke="#e24b4a" stroke-dasharray="4 3" stroke-width="1"/>' +
+    '<polyline fill="none" stroke="#378add" stroke-width="2" points="' + line + '"/></svg>' +
+    '<div style="font-size:10px;color:var(--muted)">dashed = aircraft limit ' + WIND_LIMIT_MPH + ' mph; line = wind or gust, whichever is higher</div>';
+}
+// NOAA solar equations; returns UTC ms for civil dawn, sunrise, sunset and civil dusk on the site's solar day (null in polar day/night)
+function sunTimes(lat, lon, now = Date.now()) {
+  const rad = Math.PI / 180, sin = Math.sin, cos = Math.cos, tan = Math.tan;
+  const solar = new Date(now + lon / 15 * 3600000);
+  const day0 = Date.UTC(solar.getUTCFullYear(), solar.getUTCMonth(), solar.getUTCDate());
+  const T = (day0 / 86400000 + 2440587.5 + 0.5 - lon / 360 - 2451545) / 36525;
+  const L0 = (280.46646 + T * (36000.76983 + T * 0.0003032)) % 360;
+  const M = 357.52911 + T * (35999.05029 - 0.0001537 * T);
+  const e = 0.016708634 - T * (0.000042037 + 0.0000001267 * T);
+  const C = sin(M * rad) * (1.914602 - T * (0.004817 + 0.000014 * T)) + sin(2 * M * rad) * (0.019993 - 0.000101 * T) + sin(3 * M * rad) * 0.000289;
+  const omega = 125.04 - 1934.136 * T;
+  const lambda = L0 + C - 0.00569 - 0.00478 * sin(omega * rad);
+  const eps = 23 + (26 + (21.448 - T * (46.815 + T * (0.00059 - T * 0.001813))) / 60) / 60 + 0.00256 * cos(omega * rad);
+  const decl = Math.asin(sin(eps * rad) * sin(lambda * rad));
+  const y = tan(eps * rad / 2) ** 2;
+  const eq = 4 / rad * (y * sin(2 * L0 * rad) - 2 * e * sin(M * rad) + 4 * e * y * sin(M * rad) * cos(2 * L0 * rad) - 0.5 * y * y * sin(4 * L0 * rad) - 1.25 * e * e * sin(2 * M * rad));
+  const crossing = zenith => {
+    const c = (cos(zenith * rad) - sin(lat * rad) * sin(decl)) / (cos(lat * rad) * cos(decl));
+    if (c < -1 || c > 1) return null;
+    const ha = Math.acos(c) / rad;
+    return [day0 + (720 - 4 * (lon + ha) - eq) * 60000, day0 + (720 - 4 * (lon - ha) - eq) * 60000];
+  };
+  const sun = crossing(90.833), civil = crossing(96);
+  return sun && civil ? {dawn: civil[0], sunrise: sun[0], sunset: sun[1], dusk: civil[1]} : null;
+}
+
+function renderConditions(c) {
+  const pill = document.getElementById('cond-status');
+  const cur = c.current || {};
+  if (!c.updated_at || !c.station || cur.wind_mph === undefined) {
+    document.getElementById('cond-empty').style.display = 'block';
+    document.getElementById('cond-empty').textContent = (c.errors && c.errors.length) ? 'Conditions unavailable: ' + c.errors.join('; ') : 'Fetching conditions…';
+    document.getElementById('cond-body').style.display = 'none';
+    pill.textContent = 'NO DATA'; pill.className = 'pill';
+    return;
+  }
+  document.getElementById('cond-empty').style.display = 'none';
+  document.getElementById('cond-body').style.display = 'block';
+  const a = c.assessment || {};
+  pill.textContent = a.status || 'UNKNOWN';
+  pill.className = 'pill ' + ({OK: 'go', CAUTION: 'conditional', HOLD: 'nogo'}[a.status] || '');
+  const metric = (label, value, sub) => '<div><div style="font-size:10px;color:var(--muted)">' + label + '</div><div style="font-size:16px">' + value +
+    '</div>' + (sub ? '<div style="font-size:10px;color:var(--muted)">' + sub + '</div>' : '') + '</div>';
+  const wind = cur.wind_mph == null ? '—' : cur.wind_mph === 0 ? 'Calm' : (cur.wind_dir != null ? String(cur.wind_dir).padStart(3, '0') + '° ' : '') + cur.wind_mph + ' mph';
+  let daylight = '—', daylightSub = '';
+  const st = c.site && c.site.lat != null ? sunTimes(c.site.lat, c.site.lon) : null;
+  if (st) {
+    const now = Date.now();
+    if (now >= st.sunrise && now <= st.sunset) { daylight = 'Yes'; daylightSub = 'sunset ' + fmtHM(st.sunset); }
+    else if (now >= st.dawn && now <= st.dusk) { daylight = 'Civil twilight'; daylightSub = 'anti-collision light required'; }
+    else { daylight = 'No — night'; daylightSub = 'anti-collision light required'; }
+  }
+  const WX = {RA: 'rain', SN: 'snow', DZ: 'drizzle', GR: 'hail', GS: 'small hail', PL: 'ice pellets', SG: 'snow grains', IC: 'ice crystals', UP: 'precipitation', TS: 'thunderstorm', SH: 'showers', FZ: 'freezing'};
+  const precip = (cur.wx || '').split(/\s+/).filter(Boolean).map(tok => {
+    const heavy = tok[0] === '+' ? 'heavy ' : tok[0] === '-' ? 'light ' : '';
+    const words = (tok.replace(/^[-+]/, '').match(/.{1,2}/g) || []).map(code => WX[code]).filter(Boolean);
+    return words.length ? heavy + words.join(' ') : '';
+  }).filter(Boolean).join(', ');
+  document.getElementById('cond-metrics').innerHTML =
+    metric('Wind', wind, cur.gust_mph ? 'gusting ' + cur.gust_mph + ' mph' : 'no gusts reported') +
+    metric('Visibility', cur.vis_sm == null ? '—' : cur.vis_sm + ' SM') +
+    metric('Ceiling', cur.ceiling_ft == null ? 'none (clear/few/scattered)' : cur.ceiling_ft + ' ft') +
+    metric('Flight category', escapeHtml(cur.flight_category || '—')) +
+    metric('Precipitation', precip ? escapeHtml(precip) : 'None', c.station ? 'reported at ' + escapeHtml(c.station.id) : '') +
+    metric('Daylight', daylight, daylightSub) +
+    metric('Temperature', cur.temp_c == null ? '—' : Math.round(cur.temp_c * 9 / 5 + 32) + ' °F') +
+    metric('Density altitude', a.density_altitude_ft == null ? '—' : a.density_altitude_ft.toLocaleString() + ' ft', c.elevation_ft != null ? 'field ' + c.elevation_ft.toLocaleString() + ' ft' : '') +
+    metric('Altimeter', cur.altimeter_inhg == null ? '—' : cur.altimeter_inhg + ' inHg') +
+    metric('Altitude limit', '400 ft AGL', 'Part 107 maximum (§107.51(b))') +
+    metric('Nearest station', escapeHtml(c.station.id), c.station.distance_mi + ' mi · ' + escapeHtml(c.station.name));
+  document.getElementById('cond-trend').textContent = c.trend && c.trend !== 'unknown' ? '· ' + c.trend : '';
+  document.getElementById('cond-spark').innerHTML = windSparkline(c.history || []);
+  const color = {OK: 'var(--green)', CAUTION: 'var(--amber)', HOLD: 'var(--red)'}[a.status] || 'var(--muted)';
+  const lvlColor = {hold: 'var(--red)', caution: 'var(--amber)', info: 'var(--green)'};
+  document.getElementById('cond-reasons').innerHTML = (a.reasons || []).map(r => {
+    const item = typeof r === 'string' ? {level: 'info', text: r, source: ''} : r;
+    return '<div style="margin-bottom:4px"><div style="color:' + (lvlColor[item.level] || color) + '">• ' + escapeHtml(item.text) + '</div>' +
+      (item.source ? '<div style="font-size:10px;color:var(--muted);margin-left:12px">Source: ' + escapeHtml(item.source) + '</div>' : '') + '</div>';
+  }).join('');
+  const ap = c.airport;
+  const freqs = (ap && ap.frequencies) || [];
+  document.getElementById('cond-freqs').innerHTML = ap ? '<span style="color:var(--muted)">' + escapeHtml(ap.icao) + ' ' + escapeHtml(ap.name) + ' radio:</span> ' +
+    (freqs.length ? freqs.slice(0, 9).map(f => '<span style="border:1px solid var(--border);border-radius:4px;padding:2px 6px;margin-right:4px">' +
+      escapeHtml(f.type) + ' ' + f.mhz.toFixed(3) + '</span>').join('') : '<span style="color:var(--muted)">no frequencies listed</span>') : '';
+  document.getElementById('cond-forecast').innerHTML = (c.forecast || []).slice(0, 8).map(f =>
+    '<span style="border:1px solid var(--border);border-radius:4px;padding:3px 7px">' + fmtHM(f.start) + ' · ' + (f.wind_mph ?? '—') + ' mph' +
+    (f.precip_pct ? ' · ' + f.precip_pct + '% rain' : '') + '</span>').join('') || '<span style="color:var(--muted)">Forecast unavailable</span>';
+  document.getElementById('cond-alerts').innerHTML = (c.alerts || []).map(al =>
+    '<div style="color:var(--amber)">⚠ ' + escapeHtml(al.headline || al.event || 'NWS alert') + '</div>').join('');
+  const obsAge = cur.obs_time ? ageText(cur.obs_time) + ' old' : 'age unknown';
+  document.getElementById('cond-foot').textContent = 'Observation ' + (cur.obs_time ? fmtHM(cur.obs_time) : '—') + ' (' + obsAge + ') · checked ' +
+    fmtTime(c.updated_at) + ' every ' + Math.round((c.poll_seconds || 300) / 60) + ' min · sources: aviationweather.gov, api.weather.gov' +
+    (c.errors && c.errors.length ? ' · partial: ' + c.errors.join('; ') : '') + ' · advisory only; the preflight verdict is the go/no-go gate';
+}
+async function fetchConditions() {
+  try {
+    const r = await fetch(API+'/api/conditions');
+    if (r.ok) renderConditions(await r.json());
+  } catch(e) {}
+}
+
+// Watch first: the items a person should look at now — matches, emergencies, hazards, flagged ATC
+function watchItems(alerts, atcEntries) {
+  const items = [];
+  for (const a of (alerts || [])) {
+    const cls = a.tool === 'emergency' ? 'critical' : a.tool === 'directive_match' ? 'match' : (a.tool || '').includes('safety') ? 'medium' : 'high';
+    items.push({cls, tool: (a.tool || 'alert').toUpperCase(), text: (a.description || a.summary || '').slice(0, 120), when: a.timestamp ? fmtTime(a.timestamp) : ''});
+  }
+  for (const e of (atcEntries || [])) {
+    if (e.pinned) {
+      items.push({cls: 'high', tool: 'ATC · pinned', text: (e.summary || e.transcript || '').slice(0, 120), when: e.received_at ? fmtTime(e.received_at) : ''});
+      continue;
+    }
+    if (!e.flagged) continue;
+    const sev = (e.severity || '').toLowerCase();
+    if (!['critical', 'high', 'medium'].includes(sev)) continue;
+    items.push({cls: sev === 'critical' ? 'critical' : sev === 'high' ? 'high' : 'medium', tool: 'ATC ' + (e.severity || 'FLAG'), text: (e.summary || e.transcript || '').slice(0, 120), when: e.received_at ? fmtTime(e.received_at) : ''});
+  }
+  return items;
+}
+function renderWatch(alerts, atcEntries) {
+  const c = document.getElementById('watch-container');
+  const items = watchItems(alerts, atcEntries);
+  document.getElementById('watch-count').textContent = items.length || '';
+  c.innerHTML = items.length ? items.map(i =>
+    `<div class="watch-item ${i.cls}"><div class="atc-meta"><b>${escapeHtml(i.tool)}</b> &middot; ${escapeHtml(i.when)}</div><div>${escapeHtml(i.text)}</div></div>`
+  ).join('') : '<div style="color:var(--muted);font-size:12px">Nothing flagged yet.</div>';
+}
+
+// ATC audio: plays the same stream the listener uses; stops and releases it when toggled off
+document.getElementById('atc-audio').addEventListener('click', () => {
+  const player = document.getElementById('atc-player');
+  const btn = document.getElementById('atc-audio');
+  if (player.paused || !player.src) {
+    fetch(API+'/api/atc/live').then(r => r.json()).then(d => {
+      if (!d.stream_url) { btn.textContent = '▶ Play (no stream)'; return; }
+      player.src = d.stream_url;
+      player.play().then(() => { btn.textContent = '⏸ Pause'; btn.classList.add('on'); document.getElementById('atc-audio-dot').style.display = 'inline-block'; }).catch(() => { btn.textContent = '▶ Play'; });
+      fetch(API+'/api/atc/live', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({on: true})}).catch(() => {});
+    }).catch(() => {});
+  } else {
+    player.pause();
+    btn.textContent = '▶ Play'; btn.classList.remove('on'); document.getElementById('atc-audio-dot').style.display = 'none';
+    fetch(API+'/api/atc/live', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({on: false})}).catch(() => {});
+  }
+});
+
+// Audio and transcription are one switch: a page load, reload or close leaves no audio playing, so the listener stops too
+const atcListenerOff = () => navigator.sendBeacon(API+'/api/atc/live', new Blob([JSON.stringify({on: false})], {type: 'application/json'}));
+window.addEventListener('pagehide', atcListenerOff);
+['error', 'ended'].forEach(ev => document.getElementById('atc-player').addEventListener(ev, () => {
+  const btn = document.getElementById('atc-audio');
+  btn.textContent = '▶ Play'; btn.classList.remove('on'); document.getElementById('atc-audio-dot').style.display = 'none';
+  atcListenerOff();
+}));
+
+// The airport and frequencies that the ATC audio comes from, shown under the Play button
+(async () => {
+  try {
+    const r = await fetch(API+'/api/atc/live');
+    if (!r.ok) return;
+    const d = await r.json();
+    if (d.on) atcListenerOff();
+    const el = document.getElementById('atc-audio-feed');
+    const ap = d.airport || {};
+    const freqs = (d.frequencies || []).slice(0, 3).map(f => (f.name || f.type) + ' ' + f.mhz.toFixed(3)).join(' · ');
+    el.textContent = (d.feed_name || 'ATC feed') + (ap.icao ? ' — ' + ap.icao + (ap.name ? ', ' + ap.name : '') : '') + (freqs ? '\n' + freqs : '');
+  } catch (e) {}
+})();
+
+// Operating location: follows aircraft GPS; can be set by airport code or coordinates
+let lastLocKey = '';
+async function fetchLocation() {
+  try {
+    const r = await fetch(API+'/api/location');
+    if (!r.ok) return;
+    const d = await r.json();
+    const loc = d.location || {};
+    const bits = [loc.label || 'unknown'];
+    if (loc.lat != null) bits.push(loc.lat.toFixed(3) + ', ' + loc.lon.toFixed(3));
+    if (d.airport) bits.push('busiest nearby: ' + d.airport.icao + ' (' + d.airport.distance_mi + ' mi)');
+    if (d.elevation_ft != null) bits.push(d.elevation_ft + ' ft elevation');
+    document.getElementById('loc-label').textContent = bits.join(' · ');
+    document.getElementById('loc-auto').className = 'cmd-btn' + (loc.mode === 'manual' ? ' secondary' : ' on');
+    document.getElementById('loc-set-btn').className = 'cmd-btn' + (loc.mode === 'manual' ? ' on' : '');
+    const as = d.airspace, asBox = document.getElementById('airspace-box');
+    if (as && as.label) {
+      asBox.style.display = 'block';
+      document.getElementById('airspace-class').textContent = as.label;
+      document.getElementById('airspace-auth').textContent = as.authorization || '';
+      document.getElementById('airspace-detail').textContent = as.detail || '';
+      document.getElementById('airspace-class').style.color = as.class === 'D' ? 'var(--red)' : (String(as.class).startsWith('G') ? 'var(--green)' : 'var(--amber)');
+    } else {
+      asBox.style.display = 'none';
+    }
+    window._atcFeed = d.atc || null;
+    const atcTitle = document.getElementById('atc-source');
+    if (atcTitle) atcTitle.textContent = d.atc && d.atc.feed ? d.atc.airport + ' ' + (d.atc.feed.name || '') : (d.atc && d.atc.reason ? d.atc.reason : '');
+  } catch(e) {}
+}
+async function postLocation(body) {
+  try {
+    const r = await fetch(API+'/api/location', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+    if (!r.ok) { document.getElementById('loc-label').textContent = 'Could not set location: ' + (await r.json()).detail; return; }
+    fetchLocation();
+  } catch(e) {}
+}
+document.getElementById('loc-form').addEventListener('submit', e => {
+  e.preventDefault();
+  const input = document.getElementById('loc-input');
+  const text = input.value.trim();
+  if (!text) return;
+  const m = text.match(/^(-?\d+(?:\.\d+)?)\s*[, ]\s*(-?\d+(?:\.\d+)?)$/);
+  postLocation(m ? {lat: parseFloat(m[1]), lon: parseFloat(m[2])} : {airport: text});
+  input.value = '';
+});
+document.getElementById('loc-auto').addEventListener('click', () => postLocation({auto: true}));
+
+async function fetchNarration() {
+  try {
+    const r = await fetch(API+'/api/narration');
+    if (r.ok) window._narration = await r.json();
+  } catch (e) {}
+}
+
+// Parking: latest empty-space count, also shown to the parking team on their own page
+async function fetchParking() {
+  try {
+    const r = await fetch(API+'/api/parking');
+    if (!r.ok) return;
+    const d = await r.json();
+    window._lastParking = d.latest;
+    const c = d.latest;
+    const value = document.getElementById('kpi-parking'), sub = document.getElementById('kpi-parking-sub');
+    if (!c) { value.textContent = '—'; sub.textContent = 'no count yet'; return; }
+    value.textContent = c.empty;
+    const bits = ['of ' + c.total_seen + ' seen', c.confidence + ' confidence', fmtHM(c.counted_at)];
+    if (d.count) bits.push(d.count + (d.count === 1 ? ' count' : ' counts') + ' this session');
+    if (c.coverage === 'part_of_lot') bits.push('part of lot');
+    if (c.areas && c.areas.length) bits.push('most free: ' + c.areas[0].name + ' (' + c.areas[0].count + ')');
+    sub.textContent = bits.join(' · ');
+  } catch(e) {}
+}
+
+// Poll every 3 seconds
+async function poll() {
+  await Promise.all([fetchStatus(), fetchLog(), fetchAtc(), fetchCommand(), fetchDemo(), fetchConditions(), fetchLocation(), fetchParking(), fetchNarration()]);
+}
+poll();
+setInterval(poll, 3000);
+</script>
+</body>
+</html>

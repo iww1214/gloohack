@@ -1,0 +1,32 @@
+{
+  "scenarios": [
+    {
+      "id": "person_to_vehicle",
+      "title": "Person in a red top",
+      "summary": "The agent reports what it sees: a person in a red top walks across the car park to a parked red car.",
+      "file": "Person in red top near a red car.mp4",
+      "events": [{ "at": 15, "kind": "story", "zone": "Parking lot", "directive": "Find a person wearing a red top" }]
+    },
+    {
+      "id": "open_car_door",
+      "title": "Car with its doors open",
+      "summary": "The agent is asked to find cars with open doors and reports the one it sees in the car park.",
+      "file": "car with open doors in parking.mp4",
+      "events": [{ "at": 6, "kind": "story", "zone": "Parking lot", "directive": "Find cars with open doors" }]
+    },
+    {
+      "id": "parking_count",
+      "title": "Bonus: identify free parking spaces (for latecomers 😊)",
+      "summary": "Counts free spaces from the aerial view and shows them to the parking team.",
+      "file": "parking lot with a few empty spaces.mp4",
+      "events": [{ "at": 10, "kind": "parking" }]
+    },
+    {
+      "id": "unattended_bag",
+      "title": "Unattended backpack",
+      "summary": "The agent is asked to find unattended bags and reports a backpack left alone on a bench. Ground-level stock footage, so the aerial view is simulated.",
+      "file": "unattended backpack.mp4",
+      "events": [{ "at": 11, "kind": "story", "zone": "Main entrance", "directive": "Find unattended bags or items" }]
+    }
+  ]
+}

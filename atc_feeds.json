@@ -1,0 +1,10 @@
+{
+  "_help": "Add a LiveATC stream per airport you want to monitor. Open https://www.liveatc.net/search/ , pick the airport, copy a feed's .pls link, and add it below. The agent picks the feed for whichever airport is busiest near the aircraft. Check LiveATC's terms of use before relying on a feed.",
+  "feeds": {
+    "KDCA": [{ "name": "Approach/Tower (SIMULATED demo clips)", "clips": "atc_clips/KDCA" }],
+    "KDEN": [{ "name": "Approach, Final 1 (delayed, unofficial)", "url": "http://d.liveatc.net/kden1_app_fin1" }]
+  },
+  "_example": {
+    "KXXX": [{ "name": "Tower", "url": "https://www.liveatc.net/play/example.pls" }]
+  }
+}

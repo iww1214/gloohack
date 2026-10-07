@@ -18,7 +18,7 @@ In this clip, we ask the system to find a person in a red top. It describes them
 
 **[Switch to “Live drone view” and show the live feed from the room.]**
 
-This is the live camera view. In a real patrol, an operator can use the aerial perspective, then change the camera's viewpoint to check an area of interest. The drone can also fly an operator-authorized, pre-programmed waypoint route autonomously when conditions permit. This complements fixed cameras, which stay pointed in one direction.
+This is the live camera view. In a real patrol, an operator can use the aerial perspective, then change the camera's viewpoint to check an area of interest. A patrol can also be pre-programmed as a waypoint route, but that is a future capability, not yet enabled in our current solution. This complements fixed cameras, which stay pointed in one direction.
 
 Other prompts include a car with its doors open—we see that often—an unattended backpack, and, as a bonus for the parking crew, free spaces 30 minutes into the service for latecomers. These are leads, not proof of danger or wrongdoing. Safety volunteers review them and decide what to do.
 
@@ -32,7 +32,7 @@ Safety1271 is designed to augment a church safety team like ours—to give us a 
 
 - Run the recorded person-in-red-top scenario first; let the narration finish before switching views.
 - Then select **Live drone view** and describe how the aerial perspective can complement fixed cameras.
-- Explain that an authorized waypoint mission is separate from the AI search prompt and remains subject to operator oversight and flight-safety checks.
+- Describe pre-programmed waypoint patrols as a future capability, not a feature enabled or demonstrated in the current solution. Any future mission must remain separate from the AI search prompt and subject to operator oversight and flight-safety checks.
 - Keep the live feed genuinely live. If it is unavailable, say so and label any substitute footage as simulated.
 - Do not describe an AI observation as a confirmed identity, threat, or motive.
 - Weather and airspace checks inform the go/no-go decision; they do not make unsafe conditions safe or remove aircraft operating limits.

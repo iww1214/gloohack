@@ -1,0 +1,54 @@
+# Safety1271 AI Drone Security System — Python Dependencies
+# Install: pip install -r requirements.txt
+
+# ── AI / LLM ─────────────────────────────────────────────────────────────────
+openai>=1.30.0            # Gloo AI uses OpenAI-compatible SDK
+requests>=2.31.0          # Gloo OAuth2 token exchange + FAA/weather APIs
+
+# ── Drone control ─────────────────────────────────────────────────────────────
+# DJIControlClient: download manually from github.com/dkapur17/DJIControlClient
+# Place DJIControlClient.py in this directory
+
+# ── Vision / Video ───────────────────────────────────────────────────────────
+opencv-python>=4.9.0      # RTSP frame capture from MediaMTX stream
+pillow>=10.0.0            # Frame resize/encode in safety1271_compound.py
+imageio-ffmpeg>=0.6.0     # Local FFmpeg binary for loopback synthetic RTMP replay
+# MediaMTX: run as separate binary — download from github.com/bluenviron/mediamtx
+
+# ── Audio / ATC ──────────────────────────────────────────────────────────────
+openai-whisper>=20231117  # ATC radio transcription
+sounddevice>=0.4.6        # Audio capture (RTL-SDR or system mic)
+scipy>=1.12.0             # Audio processing for Whisper input
+pyrtlsdr>=0.3.0           # RTL-SDR dongle support (optional — fallback to LiveATC stream)
+
+# ── Communications ────────────────────────────────────────────────────────────
+twilio>=8.5.0             # SMS alerts + RPIC confirmation
+sendgrid>=6.11.0          # HTML email alerts + PDF report delivery
+
+# ── Scheduling ───────────────────────────────────────────────────────────────
+APScheduler>=3.10.4       # Scheduled patrol takeoffs
+
+# ── Web / API servers ─────────────────────────────────────────────────────────
+fastapi>=0.110.0          # Live dashboard API (port 8090)
+uvicorn>=0.29.0           # ASGI server for FastAPI
+flask>=3.0.0              # Twilio SMS webhook (port 5001)
+
+# ── PDF generation (post-patrol report) ──────────────────────────────────────
+reportlab>=4.1.0          # 10-page patrol PDF report
+pdfplumber>=0.10.0        # FAA supplement / A/FD PDF ingestion
+
+# ── Geography / Time ─────────────────────────────────────────────────────────
+astral>=3.2               # Civil twilight calculation (Part 107.29)
+
+# ── Knowledge base ───────────────────────────────────────────────────────────
+# SQLite FTS5 is built into Python's stdlib — no separate install needed
+
+# ── Environment ──────────────────────────────────────────────────────────────
+python-dotenv>=1.0.0      # Load .env file
+
+# Optional Arthur Platform tracing/evals. Install when ARTHUR_* is configured:
+# pip install "arthur-observability-sdk[openai]"
+
+# ── Optional / Enhanced ───────────────────────────────────────────────────────
+# checkwx                 # pip install checkwx  — D-ATIS secondary source
+#                         # Set CHECKWX_API_KEY in .env

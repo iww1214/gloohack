@@ -1,0 +1,54 @@
+{
+  "clips": [
+    {
+      "file": "Person in red top near a red car.mp4",
+      "directive": "Find a person wearing a red top",
+      "must": [
+        "A person wearing a red top is visible walking in the car park.",
+        "The person walks toward the red car, getting closer to it.",
+        "The person reaches the red car.",
+        "The account ends with the person getting into the red car, stated plainly."
+      ],
+      "must_not": [
+        "The person walks away from the red car or moves farther from it.",
+        "The red car arrives, drives in, enters the frame, or moves (it is parked and stationary throughout).",
+        "The person's entering the car is hedged as only possible or suggested (for example 'possibly', 'appears to have', 'suggesting they entered').",
+        "The person is called a child or lost, or is given an age, identity or motive.",
+        "A vehicle is named by make or model (for example Volkswagen or Tiguan) instead of by colour and type.",
+        "The account ends with the person merely standing beside the car with no mention that they are no longer visible or got in.",
+        "The narration mentions tracking, software, detection, measurements, tiles, sheets, frames or images instead of describing the footage itself."
+      ]
+    },
+    {
+      "file": "car with open doors in parking.mp4",
+      "directive": "Find cars with open doors",
+      "must": [
+        "A silver or grey SUV or similar car in the car park is reported as having doors open.",
+        "More than one open door is mentioned, or the driver's side door and a rear door.",
+        "The car is reported as matching the request to find cars with open doors."
+      ],
+      "must_not": [
+        "A person is said to be visible in, beside or getting out of the car (no person is visible).",
+        "The narration says the doors were opened for a reason or calls the car stolen, suspicious or a threat. Saying the car is unattended is fine.",
+        "The other parked cars are said to have open doors.",
+        "A vehicle is named by make or model stated as fact (without 'appears to be' or 'looks like') when no logo or badge is legible.",
+        "The narration mentions tracking, software, detection, measurements, tiles, sheets, frames or images instead of describing the footage itself."
+      ]
+    },
+    {
+      "file": "unattended backpack.mp4",
+      "directive": "Find unattended bags or items",
+      "must": [
+        "A dark or black backpack is on a wooden bench.",
+        "No person is visible near the backpack at any point; it is left alone.",
+        "The backpack is reported as matching the request to find unattended bags or items."
+      ],
+      "must_not": [
+        "A person is said to be visible, sitting on the bench, or walking away from it.",
+        "The backpack is called dangerous, suspicious or a threat, or given an owner or reason for being there.",
+        "The backpack is said to move or to be picked up.",
+        "The narration mentions tracking, software, detection, measurements, tiles, sheets, frames or images instead of describing the footage itself."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "_help": "Names the parking team sees for each part of the car park, by compass direction. Edit these to your real landmarks, for example 'S': 'South side, near the south entrance'. The agent works out the direction from where the aircraft's camera is pointing.",
+  "areas": {
+    "N": "North side",
+    "NE": "North-east corner",
+    "E": "East side",
+    "SE": "South-east corner",
+    "S": "South side (near the south entrance)",
+    "SW": "South-west corner",
+    "W": "West side",
+    "NW": "North-west corner",
+    "C": "Middle of the car park"
+  }
+}

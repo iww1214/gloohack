@@ -1,0 +1,26 @@
+# Copy to mediamtx.live.yml and replace the password locally.
+# Match the username/password in the Android app's strings.xml.
+rtmp: yes
+rtmpAddress: :1935
+rtsp: yes
+rtspAddress: 127.0.0.1:8554
+api: no
+hls: no
+webrtc: no
+srt: no
+authMethod: internal
+authInternalUsers:
+  - user: dronepub
+    pass: CONFIGURE_A_UNIQUE_LOCAL_PASSWORD
+    ips: []
+    permissions:
+      - action: publish
+        path: live/drone
+  - user: any
+    ips: ['127.0.0.1', '::1']
+    permissions:
+      - action: read
+        path: live/drone
+paths:
+  live/drone:
+    source: publisher
