@@ -4,17 +4,19 @@
 
 ## Project description (250 words)
 
-Safety1271 gives church safety volunteers another set of eyes: an aerial perspective paired with AI that describes what is visible, while people remain responsible for decisions.
+Safety1271 was inspired by my experience serving on the safety and security team at my church in Northern Virginia. Our challenge is simple: while we monitor one area, what might we miss elsewhere?
 
-Built from the experience of serving on a church safety and security team in Northern Virginia, the project addresses a challenge: no volunteer can watch an entire campus at once. Fixed cameras provide coverage, but parked vehicles, building edges, and installed camera angles can leave areas outside their view.
+Large church campuses cannot be watched everywhere at once. Fixed cameras provide coverage, but parked vehicles, building edges, and viewing angles can leave areas unseen. Safety1271 complements those cameras by combining drone video with AI, giving volunteers a broader aerial perspective and helping them notice situations that deserve attention.
 
-The Command Center lets an operator request observations in plain language, such as finding a person in a red top, a car with open doors, or an unattended backpack. Recorded demonstration footage is labeled as simulated. A live camera view demonstrates the aircraft video connection, while a parking workflow estimates available spaces for the parking crew.
+Operators can ask the AI to look for specific things and describe visible activity. In one recorded demonstration, it reports a person wearing a red top walking toward a red car and getting inside, without guessing identity or motive. Other scenarios include cars with open doors, unattended backpacks, and available parking spaces for people arriving after services begin.
 
-Video analysis uses Gloo AI Studio alongside computer vision techniques that compensate for camera movement and measure motion. Narrations are checked against tracked facts; contradictory accounts are retried or withheld rather than presented as reliable observations. Descriptions avoid identity, age, vehicle make, and assumptions about motive.
+The live camera view demonstrates how an operator could inspect the grounds from different viewpoints. Preprogrammed waypoint patrols are a future capability, not currently enabled in the demonstrated solution.
 
-Supporting workflows provide weather and airspace information and air traffic control transcripts. Aircraft operating limits still apply. Search prompts never launch, steer, or land the drone. Preprogrammed waypoint patrols are a future integration, not an enabled feature of the current demo.
+Human judgment remains central. Observations are leads for volunteers to review, not proof of danger or wrongdoing. Search prompts do not launch, steer, or land the aircraft.
 
-Safety1271 augments cameras and volunteer patrols instead of replacing them. Its purpose is situational awareness: helping people notice what deserves attention, review the evidence, and respond with human judgment at the center.
+Weather and aviation requirements apply. Drones have temperature, wind, and precipitation limits. Automated preflight checks provide weather and airspace information to support decisions about proceeding or holding operations.
+
+Safety1271 augments church safety teams rather than replacing them, helping volunteers see more, assess information, and make informed decisions with people at the center of safety.
 
 ## Detailed technology stack
 
